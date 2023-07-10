@@ -1,0 +1,23 @@
+package geektime.tdd.di;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Created by manyan.ouyang ON 2023/6/30
+ */
+public class CyclicDependenciesFoundException extends RuntimeException {
+    private Set<Class<?>> components = new HashSet<>();
+
+    public CyclicDependenciesFoundException(Class<?> component) {
+        components.add(component);
+    }
+
+    public CyclicDependenciesFoundException(Class<?> componentType, CyclicDependenciesFoundException e ) {
+        components.add(componentType);
+        components.addAll(e.components);
+    }
+    public Class<?>[] getComponents() {
+        return  components.toArray(new Class<?>[0]);
+    }
+}
