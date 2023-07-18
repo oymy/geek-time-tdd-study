@@ -43,8 +43,35 @@ public class ContainerTest {
 
         }
 
-        //TODO: abstract class
-        //TODO: interface
+        abstract class AbstractComponent implements Component {
+            @Inject
+            public AbstractComponent() {
+            }
+        }
+
+        @Test
+        public void should_throw_exception_if_component_is_abstract() {
+            assertThrows(IllegalComponentException.class,
+                    ()-> new ConstructorInjectionProvider<>(AbstractComponent.class));
+        }
+
+        @Test
+        public void should_throw_exception_if_component_is_interface() {
+            assertThrows(IllegalComponentException.class,
+                    ()-> new ConstructorInjectionProvider<>(Component.class));
+        }
+
+        //TODO throw exception if field is final
+        static class FinalInjectField {
+            @Inject
+            final Dependency dependency = null;
+        }
+
+        @Test
+        public void should_throw_exception_if_field_is_final() {
+            assertThrows(IllegalComponentException.class,
+                    ()-> new ConstructorInjectionProvider<>(FinalInjectField.class));
+        }
 
 
         @Test
@@ -165,7 +192,6 @@ public class ContainerTest {
 
             }
 
-            //TODO inject field
             @Test
             public void should_inject_dependency_via_field() {
                 Dependency dependency = new Dependency() {
@@ -192,6 +218,20 @@ public class ContainerTest {
 
 
             //TODO throw exception if dependency not found
+            static class InjectMethodWithTypeParameter {
+                @Inject
+                <T> void install() {
+
+                }
+            }
+
+            @Test
+            public void should_throw_exception_if_inject_method_has_type_parameter() {
+                assertThrows(IllegalComponentException.class, () ->
+                        new ConstructorInjectionProvider<>(InjectMethodWithTypeParameter.class));
+            }
+
+
             @Test
             public void should_throw_exception_when_field_dependency_missing() {
                 config.bind(ComponentWithFieldInjection.class, ComponentWithFieldInjection.class);
