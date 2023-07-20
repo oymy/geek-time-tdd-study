@@ -182,7 +182,7 @@ public class InjectionTest {
             }
 
             @Test
-            public void should_inject_dependency_via_superclass_inject_field() {
+            void should_inject_dependency_via_superclass_inject_field() {
                 ComponentWithFieldInjection component =
                         new ConstructorInjectionProvider<>(SubClassWithFieldInjection.class).get(context);
                 assertSame(dependency, component.dependency);
