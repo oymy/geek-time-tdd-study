@@ -59,7 +59,7 @@ public class ContainerTest {
             @Test
             void should_throw_exception_if_field_is_final() {
                 assertThrows(IllegalComponentException.class,
-                        () -> new ConstructorInjectionProvider<>(FinalInjectField.class));
+                        () -> new InjectionProvider<>(FinalInjectField.class));
             }
 
 
