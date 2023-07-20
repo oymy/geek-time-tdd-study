@@ -2,7 +2,6 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -258,10 +257,16 @@ public class InjectionTest {
 
         @Nested
         class IllegalInjectConstructor {
+
+            abstract class AbstractComponent implements Component {
+                @Inject
+                public AbstractComponent() {
+                }
+            }
             @Test
             void should_throw_exception_if_component_is_abstract() {
                 assertThrows(IllegalComponentException.class,
-                        () -> new ConstructorInjectionProvider<>(ContainerTest.ComponentConstruction.AbstractComponent.class));
+                        () -> new ConstructorInjectionProvider<>(AbstractComponent.class));
             }
 
             @Test

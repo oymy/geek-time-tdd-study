@@ -28,50 +28,54 @@ public class ContainerTest {
 
     }
 
+
     @Nested
-    public class ComponentConstruction {
-        //TODO: instance
-        @Test
-        public void should_bind_type_to_a_specific_instance() {
-            Component instance = new Component() {
-            };
-            config.bind(Component.class, instance);
-            final Context context = config.getContext();
-            assertSame(instance, context.get(Component.class).get());
+    class ContextTest {
+
+        @Nested
+        public class TypeBinding {
+
+            //TODO: instance
+            @Test
+            void should_bind_type_to_a_specific_instance() {
+                Component instance = new Component() {
+                };
+                config.bind(Component.class, instance);
+                final Context context = config.getContext();
+                assertSame(instance, context.get(Component.class).get());
 
 
-        }
-
-        abstract class AbstractComponent implements Component {
-            @Inject
-            public AbstractComponent() {
             }
-        }
 
 
-        //TODO throw exception if field is final
-        static class FinalInjectField {
-            @Inject
-            final Dependency dependency = null;
-        }
-
-        @Test
-        public void should_throw_exception_if_field_is_final() {
-            assertThrows(IllegalComponentException.class,
-                    () -> new ConstructorInjectionProvider<>(FinalInjectField.class));
-        }
 
 
-        @Test
-        public void should_return_empty_if_component_undefined() {
-            Optional<Component> component = config.getContext().get(Component.class);
-            assertTrue(component.isEmpty());
+            //TODO throw exception if field is final
+            static class FinalInjectField {
+                @Inject
+                final Dependency dependency = null;
+            }
+
+            @Test
+            void should_throw_exception_if_field_is_final() {
+                assertThrows(IllegalComponentException.class,
+                        () -> new ConstructorInjectionProvider<>(FinalInjectField.class));
+            }
+
+
+            @Test
+            void should_return_empty_if_component_undefined() {
+                Optional<Component> component = config.getContext().get(Component.class);
+                assertTrue(component.isEmpty());
+            }
+
+
         }
 
         @Nested
-        public class DependencyCheck {
+        class DependencyCheck {
             @Test
-            public void should_throw_exception_if_dependency_not_found() {
+            void should_throw_exception_if_dependency_not_found() {
                 config.bind(Component.class, InjectionTest.ConstructorInjection.Injection.InjectConstructor.class);
                 final DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class,
                         () -> config.getContext());
@@ -80,7 +84,7 @@ public class ContainerTest {
             }
 
             @Test
-            public void should_throw_exception_if_cyclic_dependencies_found() {
+            void should_throw_exception_if_cyclic_dependencies_found() {
                 config.bind(Component.class, InjectionTest.ConstructorInjection.Injection.InjectConstructor.class);
                 config.bind(Dependency.class, DependencyDependOnComponent.class);
                 final CyclicDependenciesFoundException exception = assertThrows(CyclicDependenciesFoundException.class, () -> config.getContext());
@@ -94,7 +98,7 @@ public class ContainerTest {
             }
 
             @Test // A->B->C->A
-            public void should_throw_exception_if_transitive_cyclic_dependencies_found() {
+            void should_throw_exception_if_transitive_cyclic_dependencies_found() {
                 config.bind(Component.class, InjectionTest.ConstructorInjection.Injection.InjectConstructor.class);
                 config.bind(Dependency.class, DependencyDependOnAnotherDependency.class);
                 config.bind(AnotherDependency.class, AnotherDependencyDependOnComponent.class);
@@ -110,7 +114,6 @@ public class ContainerTest {
 
             }
 
-
         }
 
     }
@@ -125,6 +128,7 @@ public class ContainerTest {
     public class LifecycleManagement {
 
     }
+
 
 }
 
