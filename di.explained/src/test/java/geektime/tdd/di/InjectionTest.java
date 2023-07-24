@@ -1,15 +1,18 @@
 package geektime.tdd.di;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by manyan.ouyang ON 2023/7/18
@@ -17,14 +20,18 @@ import static org.mockito.ArgumentMatchers.eq;
 @Nested
 public class InjectionTest {
 
-    private final Dependency dependency = Mockito.mock(Dependency.class);
+    // InjectionProvider
+    private final Dependency dependency = mock(Dependency.class);
+    private final Provider<Dependency> dependencyProvider = mock(Provider.class);
 
-    private final Context context = Mockito.mock(Context.class);
+    private final Context context = mock(Context.class);
 
     @BeforeEach
-    public void setup() {
-        Mockito.when(context.get(eq(Dependency.class)))
-                .thenReturn(Optional.of(dependency));
+    public void setup() throws NoSuchFieldException {
+        ParameterizedType providerType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
+        when(context.get(eq(providerType))).thenReturn(Optional.of(dependencyProvider));
+
+        when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
 
     }
 
@@ -134,6 +141,21 @@ public class InjectionTest {
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray());
             }
 
+            static class ProviderInjectMethod {
+                Provider<Dependency> dependency;
+
+                @Inject
+                public void install(Provider<Dependency> dependency) {
+                    this.dependency = dependency;
+                }
+            }
+
+            @Test
+            void should_inject_provider_via_method() {
+                ProviderInjectMethod instance = new InjectionProvider<>(ProviderInjectMethod.class).get(context);
+                assertSame(dependencyProvider, instance.dependency);
+            }
+
         }
 
         @Nested
@@ -195,6 +217,16 @@ public class InjectionTest {
 
             }
 
+            static class ProviderInjectField {
+                @Inject
+                Provider<Dependency> dependency;
+            }
+
+            @Test
+            void should_inject_provider_via_method() {
+                ProviderInjectField instance = new InjectionProvider<>(ProviderInjectField.class).get(context);
+                assertSame(dependencyProvider, instance.dependency);
+            }
 
         }
 
@@ -253,6 +285,21 @@ public class InjectionTest {
                 );
             }
 
+            static class ProviderInjectConstructor {
+                Provider<Dependency> dependency;
+
+                @Inject
+                public ProviderInjectConstructor(Provider<Dependency> dependency) {
+                    this.dependency = dependency;
+                }
+            }
+
+            @Test
+            void should_inject_provider_via_constructor() {
+                ProviderInjectConstructor instance = new InjectionProvider<>(ProviderInjectConstructor.class).get(context);
+                assertSame(dependencyProvider, instance.dependency);
+            }
+
         }
 
         @Nested
@@ -263,6 +310,7 @@ public class InjectionTest {
                 public AbstractComponent() {
                 }
             }
+
             @Test
             void should_throw_exception_if_component_is_abstract() {
                 assertThrows(IllegalComponentException.class,
@@ -289,8 +337,31 @@ public class InjectionTest {
                 );
             }
 
+
         }
 
     }
 
 }
+
+class ComponentWithDefaultConstructor implements Component {
+    public ComponentWithDefaultConstructor() {
+    }
+
+}
+
+class ComponentWithMultiInjectConstructors implements Component {
+    @Inject
+    public ComponentWithMultiInjectConstructors(String name, Double value) {
+    }
+
+    @Inject
+    public ComponentWithMultiInjectConstructors(String name) {
+    }
+}
+
+class ComponentWithoutInjectConstructor implements Component {
+    public ComponentWithoutInjectConstructor(String name) {
+    }
+}
+
