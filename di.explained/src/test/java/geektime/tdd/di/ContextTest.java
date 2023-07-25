@@ -119,6 +119,13 @@ class ContextTest {
             assertEquals(Component.class, exception.getComponent());
         }
 
+
+        static class MissingDependencyProviderConstructor implements Component {
+            @Inject
+            public MissingDependencyProviderConstructor(Provider<Dependency> dependency) {
+            }
+        }
+
         @Test
         void should_throw_exception_if_cyclic_dependencies_found() {
             config.bind(Component.class, InjectionTest.ConstructorInjection.Injection.InjectConstructor.class);
@@ -148,6 +155,28 @@ class ContextTest {
             assertTrue(components.contains(Dependency.class));
             assertTrue(components.contains(AnotherDependency.class));
 
+
+        }
+
+        static class CyclicDependencyProviderConstructor implements Dependency {
+            @Inject
+            public CyclicDependencyProviderConstructor(Provider<Component> component) {
+            }
+        }
+
+        static class CyclicComponentInjectConstructor implements Component {
+            @Inject
+            public CyclicComponentInjectConstructor(Dependency dependency) {
+            }
+        }
+
+        @Test
+        void should_not_throw_exception_if_cyclic_dependency_via_provider() {
+            config.bind(Component.class, CyclicComponentInjectConstructor.class);
+            config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
+
+            final Context context = config.getContext();
+            assertTrue(context.get(Component.class).isPresent());
 
         }
 

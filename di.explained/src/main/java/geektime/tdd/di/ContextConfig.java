@@ -3,6 +3,7 @@ package geektime.tdd.di;
 import jakarta.inject.Provider;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -37,16 +38,28 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
-        for (Class<?> dependency : providers.get(component).getDependencies()) {
-            if (!providers.containsKey(dependency))
-                throw new DependencyNotFoundException(dependency, component);
-            if (visiting.contains(dependency)) {
-                throw new CyclicDependenciesFoundException(visiting);
+        for (Type dependency : providers.get(component).getDependencyTypes()) {
+            if(dependency instanceof Class) {
+                checkDependency((Class<?>) component, visiting,(Class<?>) dependency);
             }
-            visiting.push(dependency);
-            checkDependencies(dependency, visiting);
-            visiting.pop();
+            if(dependency instanceof ParameterizedType) {
+                Class<?> type = (Class<?>) ((ParameterizedType) dependency).getActualTypeArguments()[0];
+
+                if (!providers.containsKey(type))
+                    throw new DependencyNotFoundException(type, component);
+            }
         }
+    }
+
+    private void checkDependency(Class<?> component, Stack<Class<?>> visiting, Class<?> dependency) {
+        if (!providers.containsKey(dependency))
+            throw new DependencyNotFoundException(dependency, component);
+        if (visiting.contains(dependency)) {
+            throw new CyclicDependenciesFoundException(visiting);
+        }
+        visiting.push(dependency);
+        checkDependencies(dependency, visiting);
+        visiting.pop();
     }
 
     interface ComponentProvider<T> {
@@ -55,6 +68,8 @@ public class ContextConfig {
         default List<Class<?>> getDependencies() {
             return List.of();
         }
+
+        default List<Type> getDependencyTypes() { return List.of(); }
     }
 
     public <Type, Implementation extends Type>

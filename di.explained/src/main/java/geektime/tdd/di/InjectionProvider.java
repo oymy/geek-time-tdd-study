@@ -11,6 +11,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
+import static java.util.stream.Stream.concat;
 
 /**
  * Created by manyan.ouyang ON 2023/7/10
@@ -22,6 +23,13 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
     private final List<Field> injectFields;
     private final List<Method> injectMethods;
 
+    @Override
+    public List<Type> getDependencyTypes() {
+        return concat(concat(stream(injectConstructor.getParameters()).map(Parameter::getParameterizedType)
+                        , injectFields.stream().map(Field::getGenericType)
+                ), injectMethods.stream().flatMap(m -> stream(m.getGenericParameterTypes()))
+        ).toList();
+    }
 
     public InjectionProvider(Class<T> component) {
         if (Modifier.isAbstract(component.getModifiers()))
@@ -136,7 +144,7 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
 
     @Override
     public List<Class<?>> getDependencies() {
-        return Stream.concat(Stream.concat(
+        return concat(concat(
                         stream(injectConstructor.getParameterTypes()),
                         injectFields.stream().map(Field::getType)),
                 injectMethods.stream().flatMap(m -> stream(m.getParameterTypes()))

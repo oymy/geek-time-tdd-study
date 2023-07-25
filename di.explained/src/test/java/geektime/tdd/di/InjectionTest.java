@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,12 +25,17 @@ public class InjectionTest {
     private final Dependency dependency = mock(Dependency.class);
     private final Provider<Dependency> dependencyProvider = mock(Provider.class);
 
+    private ParameterizedType dependencyProviderType;
+
     private final Context context = mock(Context.class);
+
+    public InjectionTest() {
+    }
 
     @BeforeEach
     public void setup() throws NoSuchFieldException {
-        ParameterizedType providerType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
-        when(context.get(eq(providerType))).thenReturn(Optional.of(dependencyProvider));
+        dependencyProviderType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
+        when(context.get(eq(dependencyProviderType))).thenReturn(Optional.of(dependencyProvider));
 
         when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
 
@@ -141,6 +147,15 @@ public class InjectionTest {
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray());
             }
 
+            @Test
+            void should_include_dependency_type_from_inject_methods() {
+                final InjectionProvider<ProviderInjectMethod> provider = new InjectionProvider<>(ProviderInjectMethod.class);
+                assertArrayEquals(
+                        new Type[]{dependencyProviderType},
+                        provider.getDependencyTypes().toArray()
+                );
+            }
+
             static class ProviderInjectMethod {
                 Provider<Dependency> dependency;
 
@@ -176,8 +191,6 @@ public class InjectionTest {
 
         }
 
-        //TODO throw exception if type parameter defined
-
     }
 
     @Nested
@@ -211,7 +224,15 @@ public class InjectionTest {
             }
 
             @Test
-            void should_include_field_dependency_from_field_dependencies() {
+            void should_include_dependency_type_from_inject_fields() {
+                final InjectionProvider<ProviderInjectField> provider = new InjectionProvider<>(ProviderInjectField.class);
+                assertArrayEquals(
+                        new Type[]{dependencyProviderType},
+                        provider.getDependencyTypes().toArray()
+                );
+            }
+            @Test
+            void should_include_dependency_from_field_dependencies() {
                 InjectionProvider<ComponentWithFieldInjection> provider = new InjectionProvider<>(ComponentWithFieldInjection.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray());
 
@@ -234,7 +255,7 @@ public class InjectionTest {
         class IllegalInjectFields {
 
             @Test
-            public void should_throw_exception_when_field_dependency_missing() {
+            void should_throw_exception_when_field_dependency_missing() {
                 ContextConfig config = new ContextConfig();
                 config.bind(Injection.ComponentWithFieldInjection.class, Injection.ComponentWithFieldInjection.class);
                 assertThrows(DependencyNotFoundException.class, () -> config.getContext());
@@ -284,6 +305,18 @@ public class InjectionTest {
                         provider.getDependencies().toArray()
                 );
             }
+
+
+            @Test
+            void should_include_dependency_type_from_inject_constructor() {
+                final InjectionProvider<ProviderInjectConstructor> provider = new InjectionProvider<>(ProviderInjectConstructor.class);
+                assertArrayEquals(
+                        new Type[]{dependencyProviderType},
+                        provider.getDependencyTypes().toArray()
+                );
+
+            }
+
 
             static class ProviderInjectConstructor {
                 Provider<Dependency> dependency;
