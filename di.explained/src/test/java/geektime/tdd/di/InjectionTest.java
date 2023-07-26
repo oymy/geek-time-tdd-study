@@ -35,9 +35,10 @@ public class InjectionTest {
     @BeforeEach
     public void setup() throws NoSuchFieldException {
         dependencyProviderType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
-        when(context.get(eq(dependencyProviderType))).thenReturn(Optional.of(dependencyProvider));
 
         when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
+
+        when(context.get(eq(dependencyProviderType))).thenReturn(Optional.of(dependencyProvider));
 
     }
 
@@ -76,7 +77,7 @@ public class InjectionTest {
             }
 
             @Test
-            public void should_call_inject_method_with_dependencies() {
+            void should_call_inject_method_with_dependencies() {
                 InjectMethodWithDependency component = new InjectionProvider<>(InjectMethodWithDependency.class).get(context);
                 assertSame(dependency, component.dependency);
 
@@ -105,7 +106,7 @@ public class InjectionTest {
 
 
             @Test
-            public void should_inject_dependencies_via_inject_method_from_superclass() {
+            void should_inject_dependencies_via_inject_method_from_superclass() {
                 SubclassWithInjectMethod component =
                         new InjectionProvider<>(SubclassWithInjectMethod.class).get(context);
                 assertEquals(1, component.superCalled);
@@ -152,7 +153,7 @@ public class InjectionTest {
                 final InjectionProvider<ProviderInjectMethod> provider = new InjectionProvider<>(ProviderInjectMethod.class);
                 assertArrayEquals(
                         new Type[]{dependencyProviderType},
-                        provider.getDependencyTypes().toArray()
+                        provider.getDependencies().toArray()
                 );
             }
 
@@ -208,7 +209,7 @@ public class InjectionTest {
             }
 
             @Test
-            public void should_inject_dependency_via_field() {
+            void should_inject_dependency_via_field() {
                 ComponentWithFieldInjection component =
                         new InjectionProvider<>(ComponentWithFieldInjection.class).get(context);
                 assertSame(dependency, component.dependency);
@@ -228,7 +229,7 @@ public class InjectionTest {
                 final InjectionProvider<ProviderInjectField> provider = new InjectionProvider<>(ProviderInjectField.class);
                 assertArrayEquals(
                         new Type[]{dependencyProviderType},
-                        provider.getDependencyTypes().toArray()
+                        provider.getDependencies().toArray()
                 );
             }
             @Test
@@ -312,7 +313,7 @@ public class InjectionTest {
                 final InjectionProvider<ProviderInjectConstructor> provider = new InjectionProvider<>(ProviderInjectConstructor.class);
                 assertArrayEquals(
                         new Type[]{dependencyProviderType},
-                        provider.getDependencyTypes().toArray()
+                        provider.getDependencies().toArray()
                 );
 
             }
