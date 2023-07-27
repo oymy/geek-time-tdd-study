@@ -10,14 +10,18 @@ import java.util.Optional;
  */
 public interface Context {
 
-    Optional get(Ref ref);
+    <ComponentType> Optional<ComponentType> get(Ref<ComponentType> ref);
 
     /**
      * Created by manyan.ouyang ON 2023/7/27
      */
-    class Ref {
+    class Ref<ComponentType> {
+
+        public static <ComponentType> Ref<ComponentType> of(Class<ComponentType> component) {
+            return new Ref<>(component);
+        }
         private Type container;
-        private final Class<?> component;
+        Class<?> component;
 
         public Type getContainer() {
             return container;
@@ -32,13 +36,30 @@ public interface Context {
             this.component = (Class<?>) container.getActualTypeArguments()[0];
         }
 
+        Ref(Type type) {
+            init(type);
+        }
+
         Ref(Class<?> component) {
-            this.component = component;
+            init(component);
+        }
+
+        protected Ref() {
+            Type type = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+            init(type);
+        }
+
+        private void init(Type type) {
+            if(type instanceof ParameterizedType parameterizedType) {
+                this.container = parameterizedType.getRawType();
+                this.component = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+            } else {
+                this.component = (Class<?>) type;
+            }
         }
 
         static Ref of(Type type) {
-            if (type instanceof ParameterizedType parameterizedType) return new Ref(parameterizedType);
-            return new Ref((Class<?>) type);
+            return new Ref(type);
         }
 
         public boolean isContainer() {
@@ -56,5 +77,6 @@ public interface Context {
         public int hashCode() {
             return Objects.hash(isContainer(), getComponent());
         }
+
     }
 }

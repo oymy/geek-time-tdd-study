@@ -2,7 +2,6 @@ package geektime.tdd.di;
 
 import jakarta.inject.Provider;
 
-import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -38,7 +37,7 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
-        for (Context.Ref dependency : providers.get(component).getDependencyRefs()) {
+        for (Context.Ref dependency : providers.get(component).getDependencies()) {
             if (!providers.containsKey(dependency.getComponent()))
                 throw new DependencyNotFoundException(dependency.getComponent(), component);
             if (!dependency.isContainer()) {
@@ -58,13 +57,11 @@ public class ContextConfig {
         T get(Context context);
 
 
-        default List<Context.Ref> getDependencyRefs() {
-            return getDependencies().stream().map(Context.Ref::of).toList();
-        }
-
-        default List<Type> getDependencies() {
+        default List<Context.Ref> getDependencies() {
             return List.of();
         }
+
+
     }
 
     public <Type, Implementation extends Type>

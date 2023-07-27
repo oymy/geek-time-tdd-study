@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -145,7 +144,7 @@ public class InjectionTest {
             @Test
             void should_include_dependencies_from_inject_method() {
                 InjectionProvider<InjectMethodWithDependency> provider = new InjectionProvider<>(InjectMethodWithDependency.class);
-                assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)}, provider.getDependencyRefs().toArray());
+                assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)}, provider.getDependencies().toArray());
             }
 
             @Test
@@ -153,7 +152,7 @@ public class InjectionTest {
                 final InjectionProvider<ProviderInjectMethod> provider = new InjectionProvider<>(ProviderInjectMethod.class);
                 assertArrayEquals(
                         new Context.Ref[]{Context.Ref.of(dependencyProviderType)},
-                        provider.getDependencyRefs().toArray()
+                        provider.getDependencies().toArray()
                 );
             }
 
@@ -229,13 +228,13 @@ public class InjectionTest {
                 final InjectionProvider<ProviderInjectField> provider = new InjectionProvider<>(ProviderInjectField.class);
                 assertArrayEquals(
                         new Context.Ref[]{Context.Ref.of(dependencyProviderType)},
-                        provider.getDependencyRefs().toArray()
+                        provider.getDependencies().toArray()
                 );
             }
             @Test
             void should_include_dependency_from_field_dependencies() {
                 InjectionProvider<ComponentWithFieldInjection> provider = new InjectionProvider<>(ComponentWithFieldInjection.class);
-                assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)}, provider.getDependencyRefs().toArray());
+                assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)}, provider.getDependencies().toArray());
 
             }
 
@@ -303,7 +302,7 @@ public class InjectionTest {
                         = new InjectionProvider<>(InjectConstructor.class);
                 assertArrayEquals(
                         new Context.Ref[]{Context.Ref.of(Dependency.class)},
-                        provider.getDependencyRefs().toArray()
+                        provider.getDependencies().toArray()
                 );
             }
 
@@ -313,7 +312,7 @@ public class InjectionTest {
                 final InjectionProvider<ProviderInjectConstructor> provider = new InjectionProvider<>(ProviderInjectConstructor.class);
                 assertArrayEquals(
                         new Context.Ref[]{Context.Ref.of(dependencyProviderType)},
-                        provider.getDependencyRefs().toArray()
+                        provider.getDependencies().toArray()
                 );
 
             }

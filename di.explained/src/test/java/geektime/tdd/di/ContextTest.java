@@ -75,12 +75,9 @@ class ContextTest {
 
             Context context = config.getContext();
 
-            ParameterizedType type = new TypeLiteral<Provider<Component>>() {}.getType();
+            final Provider<Component> provider = context.get(new Context.Ref<Provider<Component>>() {
+            }).get();
 
-            assertEquals(Provider.class, type.getRawType());
-            assertEquals(Component.class, type.getActualTypeArguments()[0]);
-
-            Provider<Component> provider = (Provider<Component>) context.get(Context.Ref.of(type)).get();
             assertSame(instance, provider.get());
 
         }
@@ -93,17 +90,10 @@ class ContextTest {
 
             Context context = config.getContext();
 
-            ParameterizedType type = new TypeLiteral<List<Component>>() {}.getType();
+            assertFalse(context.get(new Context.Ref<List<Component>>() {
+            }).isEmpty());
 
-            assertFalse(context.get(Context.Ref.of(type)).isPresent());
 
-
-        }
-
-        static abstract  class TypeLiteral<T> {
-            public ParameterizedType getType() {
-                return (ParameterizedType) ((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-            }
         }
 
     }
