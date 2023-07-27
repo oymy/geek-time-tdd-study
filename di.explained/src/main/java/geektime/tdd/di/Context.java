@@ -32,8 +32,7 @@ public interface Context {
         }
 
         Ref(ParameterizedType container) {
-            this.container = container.getRawType();
-            this.component = (Class<?>) container.getActualTypeArguments()[0];
+            init(container);
         }
 
         Ref(Type type) {
