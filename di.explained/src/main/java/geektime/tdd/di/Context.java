@@ -69,7 +69,7 @@ public interface Context {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Ref ref)) return false;
+            if (!(o instanceof Ref<?> ref)) return false;
             return Objects.equals(isContainer(), ref.isContainer()) && Objects.equals(getComponent(), ref.getComponent());
         }
 

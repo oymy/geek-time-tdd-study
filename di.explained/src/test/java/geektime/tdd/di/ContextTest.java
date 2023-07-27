@@ -90,8 +90,7 @@ class ContextTest {
 
             Context context = config.getContext();
 
-            assertFalse(context.get(new Context.Ref<List<Component>>() {
-            }).isEmpty());
+            assertFalse(context.get(new Context.Ref<List<Component>>() { }).isPresent());
 
 
         }
