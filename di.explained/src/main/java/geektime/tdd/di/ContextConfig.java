@@ -2,7 +2,6 @@ package geektime.tdd.di;
 
 import jakarta.inject.Provider;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -18,35 +17,20 @@ public class ContextConfig {
         providers.put(type, (ComponentProvider<Type>) context -> instance);
     }
 
-    private boolean isContainerType(Type type) {
-        return type instanceof ParameterizedType;
-    }
-
-    private Class<?> getComponentType(Type type) {
-        return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
-    }
 
     public Context getContext() {
         providers.keySet().forEach(component -> checkDependencies(component, new Stack<>()));
         return new Context() {
-            private <Type> Optional<Type> getComponent(Class<Type> type) {
-                return Optional.ofNullable(providers.get(type))
-                        .map(provider -> (Type) provider.get(this));
-            }
-
             @Override
-            public Optional get(Type type) {
-                if (isContainerType(type)) return getContainer((ParameterizedType) type);
-                return getComponent((Class<?>) type);
-            }
-
-
-            private Optional getContainer(ParameterizedType type) {
-                if (type.getRawType() != Provider.class) return Optional.empty();
-                Class<?> componentType = getComponentType(type);
-                return Optional.ofNullable(
-                        providers.get(componentType)).map(provider ->
-                        (Provider<Object>) () -> provider.get(this));
+            public Optional<?> get(Ref ref) {
+                if (ref.isContainer()) {
+                    if (ref.getContainer() != Provider.class) return Optional.empty();
+                    return Optional.ofNullable(
+                            providers.get(ref.getComponent())).map(provider ->
+                            (Provider<Object>) () -> provider.get(this));
+                }
+                return Optional.ofNullable(providers.get(ref.getComponent()))
+                        .map(provider -> provider.get(this));
             }
 
 
@@ -54,36 +38,29 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
-        for (Type dependency : providers.get(component).getDependencies()) {
-
-            if (isContainerType(dependency)) {
-                checkContainerTypeDependency(component, dependency);
-            } else {
-                checkComponentDependency(component, visiting, (Class<?>) dependency);
+        for (Context.Ref dependency : providers.get(component).getDependencyRefs()) {
+            if (!providers.containsKey(dependency.getComponent()))
+                throw new DependencyNotFoundException(dependency.getComponent(), component);
+            if (!dependency.isContainer()) {
+                if (!providers.containsKey(dependency.getComponent()))
+                    throw new DependencyNotFoundException(dependency.getComponent(), component);
+                if (visiting.contains(dependency.getComponent())) {
+                    throw new CyclicDependenciesFoundException(visiting);
+                }
+                visiting.push(dependency.getComponent());
+                checkDependencies(dependency.getComponent(), visiting);
+                visiting.pop();
             }
         }
     }
 
-    private void checkContainerTypeDependency(Class<?> component, Type dependency) {
-        Class<?> type = getComponentType(dependency);
-
-        if (!providers.containsKey(type))
-            throw new DependencyNotFoundException(type, component);
-    }
-
-    private void checkComponentDependency(Class<?> component, Stack<Class<?>> visiting, Class<?> dependency) {
-        if (!providers.containsKey(dependency))
-            throw new DependencyNotFoundException(dependency, component);
-        if (visiting.contains(dependency)) {
-            throw new CyclicDependenciesFoundException(visiting);
-        }
-        visiting.push(dependency);
-        checkDependencies(dependency, visiting);
-        visiting.pop();
-    }
-
     interface ComponentProvider<T> {
         T get(Context context);
+
+
+        default List<Context.Ref> getDependencyRefs() {
+            return getDependencies().stream().map(Context.Ref::of).toList();
+        }
 
         default List<Type> getDependencies() {
             return List.of();
