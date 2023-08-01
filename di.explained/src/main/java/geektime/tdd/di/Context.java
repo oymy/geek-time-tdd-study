@@ -1,5 +1,6 @@
 package geektime.tdd.di;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -20,8 +21,16 @@ public interface Context {
         public static <ComponentType> Ref<ComponentType> of(Class<ComponentType> component) {
             return new Ref<>(component);
         }
+
+        public static <ComponentType> Ref<ComponentType> of(Class<ComponentType> component, Annotation qualifier) {
+            return new Ref<>(component, qualifier);
+        }
         private Type container;
-        Class<?> component;
+        private Class<?> component;
+
+        private Annotation qualifier;
+
+
 
         public Type getContainer() {
             return container;
@@ -35,8 +44,9 @@ public interface Context {
             init(container);
         }
 
-        Ref(Type type) {
+        Ref(Type type, Annotation qualifier) {
             init(type);
+            this.qualifier = qualifier;
         }
 
         Ref(Class<?> component) {
@@ -58,13 +68,16 @@ public interface Context {
         }
 
         static Ref of(Type type) {
-            return new Ref(type);
+            return new Ref(type, null);
         }
 
         public boolean isContainer() {
             return container != null;
         }
 
+        public Annotation getQualifier() {
+            return qualifier;
+        }
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

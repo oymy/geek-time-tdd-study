@@ -2,6 +2,7 @@ package geektime.tdd.di;
 
 import jakarta.inject.Provider;
 
+import java.lang.annotation.Annotation;
 import java.util.*;
 
 /**
@@ -10,10 +11,22 @@ import java.util.*;
 public class ContextConfig {
 
     private final Map<Class<?>, ComponentProvider<?>> providers = new HashMap<>();
+    private final Map<Component, ComponentProvider<?>> components = new HashMap<>();
 
     public <Type> void bind(Class<Type> type, Type instance) {
 
         providers.put(type, (ComponentProvider<Type>) context -> instance);
+    }
+
+    public <Type> void bind(Class<Type> type, Type instance, Annotation... qualifiers) {
+        for(Annotation qualifier : qualifiers) {
+            components.put(new Component(type, qualifier), context -> instance);
+        }
+
+    }
+
+    record Component(Class<?> type, Annotation qualifiers) {
+
     }
 
 
@@ -21,15 +34,20 @@ public class ContextConfig {
         providers.keySet().forEach(component -> checkDependencies(component, new Stack<>()));
         return new Context() {
             @Override
-            public Optional<?> get(Ref ref) {
+            public <ComponentType> Optional<ComponentType> get(Ref<ComponentType> ref) {
+                if (ref.getQualifier() != null) {
+                    return Optional.ofNullable(components.get(new Component(ref.getComponent(), ref.getQualifier())))
+                            .map(provider -> (ComponentType) (provider.get(this)));
+
+                }
                 if (ref.isContainer()) {
                     if (ref.getContainer() != Provider.class) return Optional.empty();
-                    return Optional.ofNullable(
+                    return (Optional<ComponentType>) Optional.ofNullable(
                             providers.get(ref.getComponent())).map(provider ->
                             (Provider<Object>) () -> provider.get(this));
                 }
                 return Optional.ofNullable(providers.get(ref.getComponent()))
-                        .map(provider -> provider.get(this));
+                        .map(provider -> (ComponentType) (provider.get(this)));
             }
 
 
@@ -53,6 +71,7 @@ public class ContextConfig {
         }
     }
 
+
     interface ComponentProvider<T> {
         T get(Context context);
 
@@ -66,9 +85,15 @@ public class ContextConfig {
 
     public <Type, Implementation extends Type>
     void bind(Class<Type> type, Class<Implementation> implementation) {
-
         providers.put(type, new InjectionProvider<>(implementation));
+    }
 
+
+    public <Type, Implementation extends Type>
+    void bind(Class<Type> type, Class<Implementation> implementation,Annotation... qualifiers) {
+        for (Annotation qualifier : qualifiers){
+            components.put(new Component(type, qualifier), new InjectionProvider<>(implementation));
+        }
     }
 
 }
