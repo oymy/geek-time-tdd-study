@@ -3,15 +3,7 @@ package geektime.tdd.di;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.collections.Sets;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
@@ -47,7 +39,7 @@ public class ContainerTest {
 
 }
 
-interface Component {
+interface TestComponent {
 
 }
 
@@ -67,19 +59,19 @@ interface AnotherDependency {
 
 
 class DependencyDependOnComponent implements Dependency {
-    private final Component component;
+    private final TestComponent component;
 
     @Inject
-    public DependencyDependOnComponent(Component component) {
+    public DependencyDependOnComponent(TestComponent component) {
         this.component = component;
     }
 }
 
 class AnotherDependencyDependOnComponent implements AnotherDependency {
-    private final Component component;
+    private final TestComponent component;
 
     @Inject
-    public AnotherDependencyDependOnComponent(Component component) {
+    public AnotherDependencyDependOnComponent(TestComponent component) {
         this.component = component;
     }
 }
