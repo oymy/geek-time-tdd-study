@@ -255,7 +255,6 @@ record SkyWalkerLiteral() implements SkyWalker {
 
 @java.lang.annotation.Documented
 @java.lang.annotation.Retention(RetentionPolicy.RUNTIME)
-@jakarta.inject.Qualifier
 @interface Abc {
 }
 
