@@ -77,7 +77,7 @@ public class ContextConfig {
         T get(Context context);
 
 
-        default List<ComponentRef> getDependencies() {
+        default List<ComponentRef<?>> getDependencies() {
             return List.of();
         }
 
