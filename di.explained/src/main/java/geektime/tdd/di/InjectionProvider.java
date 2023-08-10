@@ -17,7 +17,6 @@ import static java.util.stream.Stream.concat;
  */
 class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
 
-    private final List<ComponentRef<?>> dependencies;
 
     private final Injectable<Constructor<T>> injectConstructor;
     private final List<Injectable<Method>> injectMethods;
@@ -58,7 +57,6 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
 
         this.injectConstructor = Injectable.of(constructor);
 
-        List<Field> injectFields1 = getInjectFields(component);
         this.injectFields = getInjectFields(component).stream().map(Injectable::of).toList();
 
         this.injectMethods = getInjectMethods(component).stream().map(Injectable::of).toList();
@@ -69,7 +67,6 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
         if (injectMethods.stream().map(m -> m.element).anyMatch(m -> m.getTypeParameters().length != 0))
             throw new IllegalComponentException();
 
-        this.dependencies = getDependencies();
     }
 
 
