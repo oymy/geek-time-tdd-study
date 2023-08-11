@@ -3,6 +3,7 @@ package geektime.tdd.di;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -142,7 +143,77 @@ class ContextTest {
 
             }
 
-            //TODO Provider
+
+        }
+
+        @Nested
+        class WithScope {
+            static class NotSingleton implements Dependency {
+
+            }
+
+            @Test
+            void should_not_be_singleton_scope_by_default() {
+                config.bind(Dependency.class, NotSingleton.class);
+                Context context = config.getContext();
+                assertNotSame(context.get(ComponentRef.of(Dependency.class)).get(),
+                        context.get(ComponentRef.of(Dependency.class)).get());
+            }
+
+            // TODO bind component as singleton scoped
+            @Test
+            void should_bind_component_as_singleton() {
+                config.bind(Dependency.class, NotSingleton.class, new SingletonLiteral());
+                Context context = config.getContext();
+                assertSame(context.get(ComponentRef.of(Dependency.class)).get(),
+                        context.get(ComponentRef.of(Dependency.class)).get());
+            }
+
+            @Singleton
+            static class SingletonAnnotated implements Dependency {
+
+            }
+
+            @Test
+            void should_retrieve_scope_annotation_from_component() {
+                config.bind(Dependency.class, SingletonAnnotated.class);
+                Context context = config.getContext();
+                assertSame(context.get(ComponentRef.of(Dependency.class)).get(),
+                        context.get(ComponentRef.of(Dependency.class)).get());
+            }
+
+
+            //TODO bind component with customize scope annotation
+
+
+            @Nested
+            class WithQualifier {
+                @Test
+                void should_not_be_singleton_scope_by_default() {
+                    config.bind(NotSingleton.class, NotSingleton.class, new SkyWalkerLiteral());
+                    Context context = config.getContext();
+                    assertNotSame(context.get(ComponentRef.of(NotSingleton.class, new SkyWalkerLiteral())).get(),
+                            context.get(ComponentRef.of(NotSingleton.class, new SkyWalkerLiteral())).get());
+                }
+
+                @Test
+                void should_bind_component_as_singleton() {
+                    config.bind(NotSingleton.class, NotSingleton.class, new SingletonLiteral(), new SkyWalkerLiteral());
+                    Context context = config.getContext();
+                    assertSame(context.get(ComponentRef.of(NotSingleton.class, new SkyWalkerLiteral())).get(),
+                            context.get(ComponentRef.of(NotSingleton.class, new SkyWalkerLiteral())).get());
+                }
+
+                @Test
+                void should_retrieve_scope_annotation_from_component() {
+                    config.bind(SingletonAnnotated.class, SingletonAnnotated.class, new SkyWalkerLiteral());
+                    Context context = config.getContext();
+                    assertSame(context.get(ComponentRef.of(SingletonAnnotated.class, new SkyWalkerLiteral())).get(),
+                            context.get(ComponentRef.of(SingletonAnnotated.class, new SkyWalkerLiteral())).get());
+                }
+
+
+            }
 
         }
 
@@ -164,6 +235,11 @@ class ContextTest {
             @Inject
             public MissingDependencyProviderConstructor(Provider<Dependency> dependency) {
             }
+        }
+
+        @Singleton
+        static class MissingDependencyScoped implements TestComponent {
+
         }
 
         @Test
@@ -249,7 +325,7 @@ class ContextTest {
                 }
             }
 
-            static class NotCyclicDependency implements  Dependency {
+            static class NotCyclicDependency implements Dependency {
                 @Inject
                 public NotCyclicDependency(@SkyWalker Dependency dependency) {
                 }
@@ -261,7 +337,7 @@ class ContextTest {
                 Dependency instance = new Dependency() {
                 };
                 config.bind(Dependency.class, instance, new NamedLiteral("ChosenOne"));
-                config.bind(Dependency.class, SkywalkerDependency.class , new SkyWalkerLiteral());
+                config.bind(Dependency.class, SkywalkerDependency.class, new SkyWalkerLiteral());
                 config.bind(Dependency.class, NotCyclicDependency.class);
 
                 assertDoesNotThrow(() -> config.getContext());
@@ -290,7 +366,7 @@ record NamedLiteral(String value) implements Named {
 
     @Override
     public int hashCode() {
-        return"value".hashCode() * 127 ^ value.hashCode();
+        return "value".hashCode() * 127 ^ value.hashCode();
     }
 }
 
@@ -310,7 +386,7 @@ record SkyWalkerLiteral() implements SkyWalker {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof  SkyWalker;
+        return obj instanceof SkyWalker;
     }
 }
 
@@ -324,5 +400,13 @@ record AbcLiteral() implements Abc {
     @Override
     public Class<? extends Annotation> annotationType() {
         return Abc.class;
+    }
+}
+
+record SingletonLiteral() implements Singleton {
+
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return Singleton.class;
     }
 }
