@@ -1,20 +1,17 @@
 package geektime.tdd.di;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import jakarta.inject.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -183,7 +180,15 @@ class ContextTest {
             }
 
 
-            //TODO bind component with customize scope annotation
+            @Test
+            void should_bind_component_as_customized_scope() {
+                config.scope(Pooled.class, PooledProvider::new);
+                config.bind(NotSingleton.class,NotSingleton.class, new PooledLiteral());
+
+                Context context = config.getContext();
+                List<NotSingleton> list = IntStream.range(0, 5).mapToObj(i -> context.get(ComponentRef.of(NotSingleton.class)).get()).toList();
+                assertEquals(PooledProvider.MAX,new HashSet<>(list).size());
+            }
 
 
             @Nested
@@ -240,6 +245,12 @@ class ContextTest {
         @Singleton
         static class MissingDependencyScoped implements TestComponent {
 
+        }
+
+        @Singleton
+        static  class MissingDependencyProviderScoped implements  TestComponent {
+            @Inject
+            Provider<Dependency> dependency;
         }
 
         @Test
@@ -408,5 +419,19 @@ record SingletonLiteral() implements Singleton {
     @Override
     public Class<? extends Annotation> annotationType() {
         return Singleton.class;
+    }
+}
+
+@Scope
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@interface Pooled {}
+
+
+record PooledLiteral() implements Pooled {
+
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return Pooled.class;
     }
 }

@@ -3,9 +3,11 @@ package geektime.tdd.di;
 import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Scope;
+import jakarta.inject.Singleton;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Created by manyan.ouyang ON 2023/6/28
@@ -13,6 +15,11 @@ import java.util.*;
 public class ContextConfig {
 
     private final Map<Component, ComponentProvider<?>> components = new HashMap<>();
+    private final Map<Class<?>, Function<ComponentProvider<?>, ComponentProvider<?>>> scopes = new HashMap<>();
+
+    public ContextConfig() {
+        scope(Singleton.class, SingletonProvider::new);
+    }
 
     public <Type> void bind(Class<Type> type, Type instance) {
 
@@ -43,10 +50,10 @@ public class ContextConfig {
                 if (ref.isContainer()) {
                     if (ref.getContainer() != Provider.class) return Optional.empty();
                     return (Optional<ComponentType>) Optional.ofNullable(
-                            getProvider(ref)).map(provider ->
+                            getScopeProvider(ref)).map(provider ->
                             (Provider<Object>) () -> provider.get(this));
                 }
-                return Optional.ofNullable(getProvider(ref))
+                return Optional.ofNullable(getScopeProvider(ref))
                         .map(provider -> (ComponentType) (provider.get(this)));
             }
 
@@ -54,7 +61,7 @@ public class ContextConfig {
         };
     }
 
-    private <ComponentType> ComponentProvider<?> getProvider(ComponentRef<ComponentType> ref) {
+    private <ComponentType> ComponentProvider<?> getScopeProvider(ComponentRef<ComponentType> ref) {
         return components.get(ref.component());
     }
 
@@ -71,6 +78,12 @@ public class ContextConfig {
                 visiting.pop();
             }
         }
+    }
+
+    public <ScopeType extends Annotation> void scope(Class<ScopeType> pooledClass, Function<ComponentProvider<?>, ComponentProvider<?>> aNew) {
+
+        scopes.put(pooledClass, aNew);
+
     }
 
 
@@ -108,7 +121,7 @@ public class ContextConfig {
                 .or(() -> scopeFromType);
 
         ComponentProvider<Implementation> injectionProvider = new InjectionProvider<>(implementation);
-        ComponentProvider<Implementation> provider = scope.map(s -> (ComponentProvider<Implementation>) new SingletonProvider(injectionProvider)).orElse(injectionProvider);
+        ComponentProvider<Implementation> provider = scope.map(s -> (ComponentProvider<Implementation>) getScopeProvider(s, injectionProvider)).orElse(injectionProvider);
 
 
         if (qualifiers.isEmpty()) {
@@ -118,6 +131,11 @@ public class ContextConfig {
             components.put(new Component(type, qualifier), provider);
         }
     }
+
+    private ComponentProvider<?> getScopeProvider(Annotation scope, ComponentProvider<?> provider) {
+        return scopes.get(scope.annotationType()).apply(provider);
+    }
+
 
     static class SingletonProvider<T> implements ComponentProvider<T> {
         private T singleton;
@@ -132,6 +150,12 @@ public class ContextConfig {
             if (singleton == null) singleton = provider.get(context);
             return singleton;
         }
+
+        @Override
+        public List<ComponentRef<?>> getDependencies() {
+            return provider.getDependencies();
+        }
+
     }
 
 }
