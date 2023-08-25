@@ -189,6 +189,29 @@ class ContextTest {
                 List<NotSingleton> list = IntStream.range(0, 5).mapToObj(i -> context.get(ComponentRef.of(NotSingleton.class)).get()).toList();
                 assertEquals(PooledProvider.MAX,new HashSet<>(list).size());
             }
+            @Test
+            void should_throw_exception_if_multi_scope_provided() {
+
+                assertThrows(IllegalComponentException.class,
+                        () -> config.bind(NotSingleton.class,NotSingleton.class, new PooledLiteral(),new SingletonLiteral()));
+
+            }
+
+            @Singleton @Pooled
+            static class MultiScopeAnnotated {
+
+            }
+
+            @Test
+            void should_throw_exception_if_multi_scope_annotated() {
+                assertThrows(IllegalComponentException.class, () -> config.bind(MultiScopeAnnotated.class,MultiScopeAnnotated.class));
+            }
+
+
+            @Test
+            void should_throw_exception_if_scope_not_found() {
+                assertThrows(IllegalComponentException.class, () -> config.bind(NotSingleton.class,NotSingleton.class, new PooledLiteral()));
+            }
 
 
             @Nested

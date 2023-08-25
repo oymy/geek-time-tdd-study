@@ -6,14 +6,14 @@ import java.util.List;
 /**
  * Created by manyan.ouyang ON 2023/8/22
  */
-class PooledProvider<T> implements ContextConfig.ComponentProvider<T> {
+class PooledProvider<T> implements ComponentProvider<T> {
 
     static int MAX = 2;
     private List<T> pool= new ArrayList<>();
     int current;
-    private final ContextConfig.ComponentProvider<T> provider;
+    private final ComponentProvider<T> provider;
 
-    public PooledProvider(ContextConfig.ComponentProvider<T> provider) {
+    public PooledProvider(ComponentProvider<T> provider) {
         this.provider = provider;
     }
 
