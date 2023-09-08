@@ -1,5 +1,9 @@
-package geektime.tdd.rest;
+package geektime.rest;
 
+import org.junit.jupiter.api.Assertions;
+import tdd.di.ComponentRef;
+import tdd.di.Context;
+import tdd.di.ContextConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +32,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -72,7 +75,7 @@ class ASpike {
         HttpRequest request = HttpRequest.newBuilder(new URI("http://localhost:8080/")).GET().build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println(response.body());
-        assertEquals("test", response.body());
+        Assertions.assertEquals("test", response.body());
 
 
     }
@@ -154,15 +157,14 @@ class ASpike {
 
         public TestProviders(Application application) {
             this.application = application;
-            writers = (List<MessageBodyWriter>) this.application.getClasses().stream().filter(MessageBodyWriter.class::isAssignableFrom)
-                    .map(c -> {
-                        try {
-                            return c.getConstructor().newInstance();
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                 NoSuchMethodException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }).toList();
+            ContextConfig config = new ContextConfig();
+            List<Class<?>> writerClasses = this.application.getClasses().stream().filter(MessageBodyWriter.class::isAssignableFrom).toList();
+            for (Class writerClass : writerClasses) {
+                config.component(writerClass, writerClass);
+            }
+            Context context = config.getContext();
+            writers = (List<MessageBodyWriter>) writerClasses.stream().map(c -> context.get(ComponentRef.of(c)).get()).toList();
+
         }
 
         @Override
