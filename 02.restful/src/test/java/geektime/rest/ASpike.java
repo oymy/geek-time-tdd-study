@@ -1,7 +1,10 @@
 package geektime.rest;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.junit.jupiter.api.Assertions;
 import tdd.di.ComponentRef;
+import tdd.di.Config;
 import tdd.di.Context;
 import tdd.di.ContextConfig;
 import jakarta.servlet.ServletException;
@@ -75,16 +78,23 @@ class ASpike {
         HttpRequest request = HttpRequest.newBuilder(new URI("http://localhost:8080/")).GET().build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println(response.body());
-        Assertions.assertEquals("test", response.body());
+        Assertions.assertEquals("prefixprefixtest", response.body());
 
 
     }
 
     @Path("/test")
     static class TestResource {
+        @Inject
+        @Named("prefix")
+        String prefix;
+
+        @jakarta.ws.rs.core.Context
+        Providers providers;
+
         @GET
         public String get() {
-            return "test";
+            return prefix + "test";
         }
 
         public TestResource() {
@@ -92,17 +102,21 @@ class ASpike {
     }
 
     static class ResourceServlet extends HttpServlet {
-        private final Application application;
+        private final TestApplication application;
         private final Providers providers;
+        private final Context context;
 
 
-        public ResourceServlet(Application application, Providers providers) {
+        public ResourceServlet(TestApplication application, Providers providers) {
             this.application = application;
             this.providers = providers;
+
+            context = application.getContext();
+
         }
 
         @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             Stream<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class));
 
             Object result = dispatch(req, rootResources);
@@ -111,28 +125,63 @@ class ASpike {
         }
 
         Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources) {
-            Class<?> rootClass = rootResources.findFirst().get();
             try {
-                Object rootResource = rootClass.getConstructor().newInstance();
+
+                Class<?> rootClass = rootResources.findFirst().get();
+                Object rootResource = context.get(ComponentRef.of(rootClass)).get();
                 Method method = Arrays.stream(rootClass.getMethods()).filter(m -> m.isAnnotationPresent(GET.class)).findFirst().get();
                 return method.invoke(rootResource);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
     static class TestApplication extends Application {
+
+        private final Context context;
+
         @Override
         public Set<Class<?>> getClasses() {
             return Set.of(TestResource.class, StringMessageBodyWriter.class);
         }
 
+        public Config getConfig() {
+            return new Config() {
+                @Named("prefix")
+                public final String name = "prefix";
+            };
+
+        }
+
+        public Context getContext() {
+            return context;
+        }
+
+        public TestApplication() {
+            ContextConfig config = new ContextConfig();
+            config.from(getConfig());
+
+
+            List<Class<?>> writerClasses = this.getClasses().stream().filter(MessageBodyWriter.class::isAssignableFrom).toList();
+            for (Class writerClass : writerClasses) {
+                config.component(writerClass, writerClass);
+            }
+            List<Class<?>> rootResources = this.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class)).toList();
+            for (Class rootResource : rootResources) {
+                config.component(rootResource, rootResource);
+            }
+            context = config.getContext();
+        }
+
+
     }
 
     @Provider
     static class StringMessageBodyWriter implements MessageBodyWriter<String> {
+        @Inject
+        @Named("prefix")
+        String prefix;
 
         public StringMessageBodyWriter() {
         }
@@ -145,6 +194,7 @@ class ASpike {
         @Override
         public void writeTo(String s, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
             PrintWriter writer = new PrintWriter(entityStream);
+            writer.write(prefix);
             writer.write(s);
             writer.flush();
 
@@ -155,14 +205,12 @@ class ASpike {
         private final Application application;
         private final List<MessageBodyWriter> writers;
 
-        public TestProviders(Application application) {
+        public TestProviders(TestApplication application) {
             this.application = application;
-            ContextConfig config = new ContextConfig();
+
+
+            Context context = application.getContext();
             List<Class<?>> writerClasses = this.application.getClasses().stream().filter(MessageBodyWriter.class::isAssignableFrom).toList();
-            for (Class writerClass : writerClasses) {
-                config.component(writerClass, writerClass);
-            }
-            Context context = config.getContext();
             writers = (List<MessageBodyWriter>) writerClasses.stream().map(c -> context.get(ComponentRef.of(c)).get()).toList();
 
         }
