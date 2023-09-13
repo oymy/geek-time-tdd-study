@@ -1,4 +1,4 @@
-package tdd.di;
+package geektime.tdd.di;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

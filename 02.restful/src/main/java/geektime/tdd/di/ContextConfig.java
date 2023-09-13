@@ -1,6 +1,6 @@
-package tdd.di;
+package geektime.tdd.di;
 
-import tdd.di.ContextConfig.Component;
+import geektime.tdd.di.ContextConfig.Component;
 import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Scope;
@@ -13,9 +13,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static tdd.di.ContextConfigError.circularDependencies;
-import static tdd.di.ContextConfigError.unsatisfiedResolution;
-import static tdd.di.ContextConfigException.illegalAnnotation;
+import static geektime.tdd.di.ContextConfigError.circularDependencies;
+import static geektime.tdd.di.ContextConfigError.unsatisfiedResolution;
+import static geektime.tdd.di.ContextConfigException.illegalAnnotation;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.*;
 

@@ -1,4 +1,4 @@
-package tdd.di;
+package geektime.tdd.di;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;

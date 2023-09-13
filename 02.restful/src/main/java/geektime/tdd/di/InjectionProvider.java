@@ -1,4 +1,4 @@
-package tdd.di;
+package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Qualifier;
@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static tdd.di.ComponentError.*;
+import static geektime.tdd.di.ComponentError.*;
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 
