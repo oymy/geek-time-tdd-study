@@ -8,13 +8,13 @@ import java.util.Set;
  * Created by manyan.ouyang ON 2023/6/30
  */
 public class CyclicDependenciesFoundException extends RuntimeException {
-    private final Set<Class<?>> components = new HashSet<>();
+    private final Set<Component> components = new HashSet<>();
 
-    public CyclicDependenciesFoundException(List<Class<?>> visiting) {
+    public CyclicDependenciesFoundException(List<Component> visiting) {
         this.components.addAll(visiting);
     }
 
     public Class<?>[] getComponents() {
-        return components.toArray(new Class<?>[0]);
+        return components.stream().map(Component::type).toArray(Class[]::new);
     }
 }
